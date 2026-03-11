@@ -1,0 +1,11 @@
+{
+    "default": true,
+    "line-length": false,
+    "no-duplicate-heading": {
+        "siblings_only": true
+    },
+    "fenced-code-language": false,
+    "no-bare-urls": false,
+    "first-line-heading": false,
+    "heading-increment": false
+}

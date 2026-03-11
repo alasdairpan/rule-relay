@@ -1,0 +1,5 @@
+.env
+relay/target/
+relay/logs/
+deploy/adguard/conf/*
+deploy/adguard/work/*

@@ -1,0 +1,59 @@
+# The Compose stack intentionally keeps only the proxy transport public by default.
+# AdGuard Home and the relay API are loopback-bound on the host so they can sit
+# behind a separate reverse proxy or host firewall policy.
+services:
+  shadowsocks:
+    # Shared proxy transport. This is the only service meant to be Internet-facing
+    # in the default topology.
+    image: ghcr.io/shadowsocks/ssserver-rust:latest
+    restart: unless-stopped
+    volumes:
+      - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.json:ro
+    ports:
+      - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/tcp"
+      - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/udp"
+    networks:
+      - relay
+
+  adguardhome:
+    # AdGuard Home acts as the filtering decision engine and local admin surface.
+    image: adguard/adguardhome:latest
+    restart: unless-stopped
+    volumes:
+      - ./deploy/adguard/work:/opt/adguardhome/work
+      - ./deploy/adguard/conf:/opt/adguardhome/conf
+    ports:
+      # Bind the admin UI to loopback so it is not exposed publicly by default.
+      - "127.0.0.1:${ADGUARD_ADMIN_PORT:-3000}:3000"
+    expose:
+      # These ports stay on the internal Docker network for the relay container.
+      - "53/tcp"
+      - "53/udp"
+      - "3000"
+    networks:
+      - relay
+
+  relay:
+    # Public API shim that translates AdGuard responses into a smaller client API.
+    build:
+      context: ./relay
+    restart: unless-stopped
+    depends_on:
+      - adguardhome
+    environment:
+      # The container listens on all interfaces, but the host publish stays loopback-bound.
+      RELAY_BIND_ADDR: 0.0.0.0:8080
+      # Fail fast if the authentication token is missing rather than accepting an insecure default.
+      RELAY_AUTH_TOKEN: ${RELAY_AUTH_TOKEN:?RELAY_AUTH_TOKEN must be set}
+      RELAY_ALLOWED_TTL_SECS: ${RELAY_ALLOWED_TTL_SECS:-3600}
+      RELAY_BLOCKED_TTL_SECS: ${RELAY_BLOCKED_TTL_SECS:-86400}
+      ADGUARD_BASE_URL: http://adguardhome:3000
+    ports:
+      # Loopback binding leaves room for a separate TLS terminator or rate limiter.
+      - "127.0.0.1:${RELAY_PORT:-8080}:8080"
+    networks:
+      - relay
+
+networks:
+  relay:
+    driver: bridge

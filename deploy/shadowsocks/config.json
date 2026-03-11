@@ -1,0 +1,11 @@
+{
+  "server": "0.0.0.0",
+  "server_port": "${SS_SERVER_PORT}",
+  "password": "${SS_SERVER_PASSWORD}",
+  "timeout": 300,
+  "method": "aes-256-gcm",
+  "fast_open": true,
+  "log": {
+    "level": 1
+  }
+}
