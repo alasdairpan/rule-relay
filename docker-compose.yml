@@ -11,6 +11,8 @@ services:
       SS_SERVER_PORT: ${SS_SERVER_PORT:?SS_SERVER_PORT must be set}
       SS_SERVER_PASSWORD: ${SS_SERVER_PASSWORD:?SS_SERVER_PASSWORD must be set}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.template.json:ro
       - ./deploy/shadowsocks/render-config.sh:/usr/local/bin/render-shadowsocks-config.sh:ro
     ports:
@@ -27,6 +29,8 @@ services:
     image: adguard/adguardhome:latest
     restart: unless-stopped
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./deploy/adguard/work:/opt/adguardhome/work
       - ./deploy/adguard/conf:/opt/adguardhome/conf
     ports:
@@ -58,6 +62,9 @@ services:
       ADGUARD_BASE_URL: http://adguardhome:3000
       ADGUARD_USERNAME: ${ADGUARD_USERNAME:-}
       ADGUARD_PASSWORD: ${ADGUARD_PASSWORD:-}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     ports:
       # Loopback binding leaves room for a separate TLS terminator or rate limiter.
       - "127.0.0.1:${RELAY_PORT:-8080}:8080"
