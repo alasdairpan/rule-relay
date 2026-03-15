@@ -78,6 +78,7 @@ curl \
 ## Security Defaults
 
 - `RELAY_AUTH_TOKEN` is required explicitly and has no insecure default.
+- The relay writes debug-level file logs by default.
 - AdGuard Home admin is loopback-bound on the host.
 - The relay is loopback-bound on the host by default.
 - Raw upstream AdGuard error bodies are not returned to API clients.

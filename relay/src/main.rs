@@ -25,6 +25,8 @@ use config::Settings;
 use logroller::{Compression, LogRollerBuilder, Rotation, RotationAge, TimeZone};
 use models::{CacheStatus, DomainCheckQuery, DomainCheckResponse, ErrorResponse};
 use tokio::net::TcpListener;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer};
+use tracing::Level;
 use tracing_subscriber::util::SubscriberInitExt;
 
 /// Shared state injected into every request handler.
@@ -38,6 +40,8 @@ struct AppState {
 /// Starts the relay HTTP server and installs file-based tracing.
 #[tokio::main]
 async fn main() -> Result<()> {
+    let settings = Arc::new(Settings::from_env()?);
+
     // Keep operational logs on disk so the container can run without relying on stdout scraping.
     let appender = LogRollerBuilder::new("./logs", "tracing.log")
         .rotation(Rotation::AgeBased(RotationAge::Daily))
@@ -49,6 +53,7 @@ async fn main() -> Result<()> {
     let (non_blocking, _guard) = tracing_appender::non_blocking(appender);
 
     tracing_subscriber::fmt()
+        .with_max_level(Level::DEBUG)
         .with_writer(non_blocking)
         .with_ansi(false)
         .with_target(false)
@@ -57,7 +62,13 @@ async fn main() -> Result<()> {
         .finish()
         .try_init()?;
 
-    let settings = Arc::new(Settings::from_env()?);
+    tracing::info!(
+        listen_addr = %settings.bind_addr,
+        adguard_base_url = %settings.adguard_base_url,
+        log_level = "debug",
+        adguard_auth_enabled = settings.adguard_username.is_some() && settings.adguard_password.is_some(),
+        "relay configuration loaded"
+    );
 
     let state = AppState {
         adguard: adguard::AdguardClient::new(
@@ -72,6 +83,13 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/healthz", get(healthz))
         .route("/v1/domain-check", get(get_domain_check))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::DEBUG))
+                .on_request(DefaultOnRequest::new().level(Level::DEBUG))
+                .on_response(DefaultOnResponse::new().level(Level::DEBUG))
+                .on_failure(DefaultOnFailure::new().level(Level::ERROR)),
+        )
         .with_state(state);
 
     let listener = TcpListener::bind(settings.bind_addr).await?;
@@ -87,6 +105,7 @@ async fn main() -> Result<()> {
 
 /// Lightweight readiness endpoint for container and reverse-proxy health checks.
 async fn healthz() -> impl IntoResponse {
+    tracing::debug!("health check served");
     "OK"
 }
 
@@ -96,6 +115,7 @@ async fn get_domain_check(
     headers: HeaderMap,
     Query(query): Query<DomainCheckQuery>,
 ) -> Result<Json<DomainCheckResponse>, ApiError> {
+    tracing::debug!(domain = %query.domain, "received domain-check request");
     authorize(&headers, &state.settings.auth_token)?;
     resolve_domain_check(state, query.domain).await.map(Json)
 }
@@ -108,9 +128,14 @@ async fn resolve_domain_check(
     let domain = domain::normalize_domain(&raw_domain)
         .map_err(|err| ApiError::BadRequest(err.to_string()))?;
 
+    tracing::debug!(domain = %domain, "normalized domain for lookup");
+
     if let Some(cached) = state.cache.get_fresh(&domain).await {
+        tracing::debug!(domain = %domain, ttl = cached.ttl, reason = ?cached.reason, "serving cached decision");
         return Ok(cached.with_cache_status(CacheStatus::Hit));
     }
+
+    tracing::debug!(domain = %domain, "cache miss, querying AdGuard");
 
     let upstream = state
         .adguard
@@ -131,7 +156,19 @@ async fn resolve_domain_check(
     let response =
         DomainCheckResponse::from_adguard(domain, upstream, ttl, CacheStatus::Miss, Utc::now());
 
+    tracing::debug!(
+        domain = %response.domain,
+        blocked = response.blocked,
+        reason = ?response.reason,
+        ttl = response.ttl,
+        raw_reason = response.raw_reason.as_deref().unwrap_or(""),
+        matched_rules = response.rules.len(),
+        "resolved domain decision"
+    );
+
     state.cache.insert(response.clone()).await;
+
+    tracing::debug!(domain = %response.domain, "cached fresh decision");
 
     Ok(response)
 }
@@ -141,24 +178,33 @@ fn authorize(headers: &HeaderMap, expected_token: &str) -> Result<(), ApiError> 
     let value = headers
         .get(AUTHORIZATION)
         .and_then(|header| header.to_str().ok())
-        .ok_or(ApiError::Unauthorized)?;
+        .ok_or_else(|| {
+            tracing::warn!("missing authorization header");
+            ApiError::Unauthorized
+        })?;
 
     let provided = value
         .strip_prefix("Bearer ")
         .filter(|token| !token.is_empty())
-        .ok_or(ApiError::Unauthorized)?;
+        .ok_or_else(|| {
+            tracing::warn!("malformed bearer token header");
+            ApiError::Unauthorized
+        })?;
 
     if provided == expected_token {
+        tracing::debug!("request authorized");
         Ok(())
     } else {
+        tracing::warn!("invalid bearer token presented");
         Err(ApiError::Unauthorized)
     }
 }
 
 /// Waits for Ctrl+C so the HTTP server can shut down gracefully.
 async fn shutdown_signal() {
-    if let Err(err) = tokio::signal::ctrl_c().await {
-        tracing::error!(error = %err, "failed to install shutdown signal handler");
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => tracing::info!("shutdown signal received"),
+        Err(err) => tracing::error!(error = %err, "failed to install shutdown signal handler"),
     }
 }
 
