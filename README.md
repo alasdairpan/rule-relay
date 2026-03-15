@@ -53,6 +53,8 @@ The Compose stack expects these values:
 - `RELAY_AUTH_TOKEN`
 - `RELAY_PORT`
 - `ADGUARD_ADMIN_PORT`
+- `ADGUARD_USERNAME`
+- `ADGUARD_PASSWORD`
 
 Use [.env.example](/Users/adasdairpan/Workspace/rule-relay/.env.example) as the starting point for local or VPS deployment.
 
@@ -61,8 +63,9 @@ Use [.env.example](/Users/adasdairpan/Workspace/rule-relay/.env.example) as the 
 1. Copy `.env.example` to `.env` and fill in the secrets.
 2. Start the stack with `docker compose up --build`.
 3. Complete the AdGuard Home initial setup using the loopback-bound admin UI on `http://127.0.0.1:${ADGUARD_ADMIN_PORT}`.
-4. Enable the desired parental or adult-domain filters in AdGuard Home.
-5. Test the relay with a bearer token once AdGuard is configured.
+4. Set `ADGUARD_USERNAME` and `ADGUARD_PASSWORD` in `.env` to the AdGuard Home credentials you configured during setup.
+5. Enable the desired parental or adult-domain filters in AdGuard Home.
+6. Test the relay with a bearer token once AdGuard is configured.
 
 Example check:
 

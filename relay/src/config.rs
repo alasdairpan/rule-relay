@@ -10,6 +10,8 @@ pub struct Settings {
     pub bind_addr: SocketAddr,
     pub auth_token: String,
     pub adguard_base_url: String,
+    pub adguard_username: Option<String>,
+    pub adguard_password: Option<String>,
     pub allowed_ttl_secs: u64,
     pub blocked_ttl_secs: u64,
 }
@@ -26,6 +28,8 @@ impl Settings {
             auth_token: read_var("RELAY_AUTH_TOKEN")?,
             adguard_base_url: read_var("ADGUARD_BASE_URL")
                 .unwrap_or_else(|_| "http://adguardhome:3000".to_owned()),
+            adguard_username: read_optional_var("ADGUARD_USERNAME"),
+            adguard_password: read_optional_var("ADGUARD_PASSWORD"),
             allowed_ttl_secs: read_u64("RELAY_ALLOWED_TTL_SECS", 3600)?,
             blocked_ttl_secs: read_u64("RELAY_BLOCKED_TTL_SECS", 86_400)?,
         })
@@ -35,6 +39,11 @@ impl Settings {
 /// Reads a required string environment variable.
 fn read_var(name: &'static str) -> Result<String, ConfigError> {
     env::var(name).map_err(|_| ConfigError::MissingVar(name))
+}
+
+/// Reads an optional string environment variable and treats empty values as unset.
+fn read_optional_var(name: &'static str) -> Option<String> {
+    env::var(name).ok().filter(|value| !value.is_empty())
 }
 
 /// Reads an optional numeric environment variable with a default fallback.

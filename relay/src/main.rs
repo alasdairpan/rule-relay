@@ -60,7 +60,11 @@ async fn main() -> Result<()> {
     let settings = Arc::new(Settings::from_env()?);
 
     let state = AppState {
-        adguard: adguard::AdguardClient::new(settings.adguard_base_url.clone()),
+        adguard: adguard::AdguardClient::new(
+            settings.adguard_base_url.clone(),
+            settings.adguard_username.clone(),
+            settings.adguard_password.clone(),
+        ),
         cache: DecisionCache::default(),
         settings: settings.clone(),
     };

@@ -10,12 +10,14 @@ use thiserror::Error;
 #[derive(Clone)]
 pub struct AdguardClient {
     base_url: String,
+    username: Option<String>,
+    password: Option<String>,
     client: reqwest::Client,
 }
 
 impl AdguardClient {
     /// Creates a new client that talks to the configured AdGuard base URL.
-    pub fn new(base_url: String) -> Self {
+    pub fn new(base_url: String, username: Option<String>, password: Option<String>) -> Self {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(5))
             .build()
@@ -23,6 +25,8 @@ impl AdguardClient {
 
         Self {
             base_url: base_url.trim_end_matches('/').to_owned(),
+            username,
+            password,
             client,
         }
     }
@@ -31,13 +35,14 @@ impl AdguardClient {
     pub async fn check_host(&self, domain: &str) -> Result<AdguardCheckHostResponse, AdguardError> {
         let url = format!("{}/control/filtering/check_host", self.base_url);
 
-        let response = self
-            .client
-            .get(url)
-            .query(&[("name", domain)])
-            .send()
-            .await
-            .map_err(AdguardError::Transport)?;
+        let request = self.client.get(url).query(&[("name", domain)]);
+
+        let request = match (&self.username, &self.password) {
+            (Some(username), Some(password)) => request.basic_auth(username, Some(password)),
+            _ => request,
+        };
+
+        let response = request.send().await.map_err(AdguardError::Transport)?;
 
         if response.status() != StatusCode::OK {
             let status = response.status();

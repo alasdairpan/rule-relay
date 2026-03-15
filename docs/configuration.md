@@ -15,6 +15,8 @@ This repository includes a few deployment assets that cannot hold inline comment
 - `RELAY_PORT`: Loopback-bound host port published for the relay container.
 - `RELAY_ALLOWED_TTL_SECS`: TTL returned for allowed-domain decisions.
 - `RELAY_BLOCKED_TTL_SECS`: TTL returned for blocked-domain decisions.
+- `ADGUARD_USERNAME`: AdGuard Home username used by the relay when calling the protected control API.
+- `ADGUARD_PASSWORD`: AdGuard Home password used by the relay when calling the protected control API.
 
 ### AdGuard Home
 
