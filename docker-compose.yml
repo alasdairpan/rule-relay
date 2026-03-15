@@ -35,6 +35,7 @@ services:
 
   relay:
     # Public API shim that translates AdGuard responses into a smaller client API.
+    image: rule-relay:latest
     build:
       context: ./relay
     restart: unless-stopped
@@ -56,4 +57,3 @@ services:
 
 networks:
   relay:
-    driver: bridge
