@@ -4,6 +4,8 @@ set -eu
 
 source_path=/etc/shadowsocks-rust/config.json
 rendered_path=/tmp/shadowsocks-config.json
+log_dir=/var/log/shadowsocks
+log_path=$log_dir/service.log
 
 awk '
 function escape_json_string(value, escaped) {
@@ -27,4 +29,6 @@ function escape_json_string(value, escaped) {
 }
 ' "$source_path" > "$rendered_path"
 
-exec docker-entrypoint.sh ssserver --log-without-time -a nobody -c "$rendered_path"
+mkdir -p "$log_dir"
+
+exec docker-entrypoint.sh ssserver --log-without-time -a nobody -c "$rendered_path" >>"$log_path" 2>&1

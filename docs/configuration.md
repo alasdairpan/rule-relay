@@ -55,6 +55,16 @@ The directories below are bind-mounted so AdGuard Home keeps state outside the c
 
 Both paths are intentionally ignored by Git because they can contain host-specific state and sensitive configuration.
 
+## Service Log Directories
+
+The Compose stack bind-mounts per-service log directories into the repository root:
+
+- `logs/shadowsocks`: Shadowsocks startup and runtime stdout/stderr redirected by the wrapper script.
+- `logs/adguardhome`: AdGuard Home stdout/stderr redirected by the wrapper script.
+- `logs/relay`: Relay tracing files written by the Rust service.
+
+These paths are ignored by Git because they are runtime artifacts.
+
 ## Relay Container Build
 
 The relay image is built in two stages:

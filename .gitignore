@@ -1,4 +1,5 @@
 .env
+logs/
 relay/target/
 relay/logs/
 deploy/adguard/conf/*

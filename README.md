@@ -17,6 +17,14 @@ The repository includes a reference Surge rule script, but it still does not inc
 - `relay/` contains the Rust relay service.
 - `surge/` contains the reference client-side Surge script.
 
+## Service Logs
+
+Docker Compose bind-mounts service logs into the repository under `./logs/`:
+
+- `logs/shadowsocks/`
+- `logs/adguardhome/`
+- `logs/relay/`
+
 ## Relay API
 
 The relay currently exposes:

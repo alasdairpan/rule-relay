@@ -15,6 +15,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.json:ro
       - ./deploy/shadowsocks/render-config.sh:/usr/local/bin/render-shadowsocks-config.sh:ro
+      - ./logs/shadowsocks:/var/log/shadowsocks
     ports:
       - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/tcp"
       - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/udp"
@@ -33,6 +34,11 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - ./deploy/adguard/work:/opt/adguardhome/work
       - ./deploy/adguard/conf:/opt/adguardhome/conf
+      - ./deploy/adguard/start.sh:/usr/local/bin/start-adguardhome.sh:ro
+      - ./logs/adguardhome:/var/log/adguardhome
+    entrypoint:
+      - /bin/sh
+      - /usr/local/bin/start-adguardhome.sh
     ports:
       # Bind the admin UI to loopback so it is not exposed publicly by default.
       - "127.0.0.1:${ADGUARD_ADMIN_PORT:-3000}:3000"
@@ -65,6 +71,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
+      - ./logs/relay:/app/logs
     ports:
       # Loopback binding leaves room for a separate TLS terminator or rate limiter.
       - "127.0.0.1:${RELAY_PORT:-8080}:8080"
