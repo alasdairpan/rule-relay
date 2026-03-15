@@ -6,14 +6,16 @@ Rule Relay is a split-responsibility filtering stack for personal use:
 - `AdGuard Home` provides domain filtering decisions.
 - `relay` exposes a small authenticated API for the client-side Surge script.
 
-The repository is intentionally scoped to the VPS-side components. It does not include the client-side Surge enforcement script, TLS termination, or AdGuard bootstrap automation.
+The repository includes a reference Surge rule script, but it still does not include TLS termination or AdGuard bootstrap automation.
 
 ## Repository Layout
 
 - `docker-compose.yml` defines the VPS stack.
 - `deploy/shadowsocks/config.json` is the default `ssserver-rust` config, with selected fields overridden from environment variables at container start.
 - `docs/configuration.md` documents environment variables and deployment assets that cannot carry inline comments.
+- `docs/surge.md` documents the client-side Surge rule script wiring.
 - `relay/` contains the Rust relay service.
+- `surge/` contains the reference client-side Surge script.
 
 ## Relay API
 
@@ -82,6 +84,12 @@ curl \
 - AdGuard Home admin is loopback-bound on the host.
 - The relay is loopback-bound on the host by default.
 - Raw upstream AdGuard error bodies are not returned to API clients.
+
+## Surge Client
+
+The reference Surge rule script lives at [surge/rule-relay.js](/Users/adasdairpan/Workspace/rule-relay/surge/rule-relay.js).
+
+Setup details are in [docs/surge.md](/Users/adasdairpan/Workspace/rule-relay/docs/surge.md).
 
 ## Deployment Notes
 
