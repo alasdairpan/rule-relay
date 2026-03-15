@@ -32,19 +32,19 @@ The stack is intentionally split by exposure level:
 
 ## deploy/shadowsocks/config.json
 
-This file is mounted directly into the `ssserver-rust` container. Because it is JSON, comments are not embedded in the file itself.
+This file is valid JSON and carries sane defaults for local editing and review. Immediately before `ssserver-rust` starts, the container entrypoint rewrites the `server_port` and `password` fields from `SS_SERVER_PORT` and `SS_SERVER_PASSWORD` when those environment variables are set.
 
 Field summary:
 
 - `server`: Container bind address. `0.0.0.0` allows the server process to listen on all container interfaces.
-- `server_port`: Port rendered from `SS_SERVER_PORT` before the container starts `ssserver`.
-- `password`: Secret rendered from `SS_SERVER_PASSWORD` before the container starts `ssserver`.
+- `server_port`: Default listening port, optionally overridden from `SS_SERVER_PORT` before the container starts `ssserver`.
+- `password`: Default shared secret, optionally overridden from `SS_SERVER_PASSWORD` before the container starts `ssserver`.
 - `timeout`: Idle timeout in seconds for inactive connections.
 - `method`: Cipher suite used by the Shadowsocks server.
 - `fast_open`: Enables TCP Fast Open when supported by the runtime and host.
 - `log.level`: Runtime log verbosity for the Shadowsocks server.
 
-The Compose service renders `deploy/shadowsocks/config.json` into a runtime config file from container environment variables immediately before launching `ssserver`.
+The Compose service mounts `deploy/shadowsocks/config.json` read-only and writes a runtime copy just before launching `ssserver`, overriding only the environment-driven fields when present.
 
 ## AdGuard Home State Directories
 

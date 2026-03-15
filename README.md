@@ -11,7 +11,7 @@ The repository is intentionally scoped to the VPS-side components. It does not i
 ## Repository Layout
 
 - `docker-compose.yml` defines the VPS stack.
-- `deploy/shadowsocks/config.json` is the mounted `ssserver-rust` config.
+- `deploy/shadowsocks/config.json` is the default `ssserver-rust` config, with selected fields overridden from environment variables at container start.
 - `docs/configuration.md` documents environment variables and deployment assets that cannot carry inline comments.
 - `relay/` contains the Rust relay service.
 

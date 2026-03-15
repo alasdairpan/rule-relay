@@ -13,7 +13,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.template.json:ro
+      - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.json:ro
       - ./deploy/shadowsocks/render-config.sh:/usr/local/bin/render-shadowsocks-config.sh:ro
     ports:
       - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/tcp"

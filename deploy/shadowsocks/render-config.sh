@@ -2,18 +2,29 @@
 
 set -eu
 
-: "${SS_SERVER_PORT:?SS_SERVER_PORT must be set}"
-: "${SS_SERVER_PASSWORD:?SS_SERVER_PASSWORD must be set}"
-
-template_path=/etc/shadowsocks-rust/config.template.json
+source_path=/etc/shadowsocks-rust/config.json
 rendered_path=/tmp/shadowsocks-config.json
 
 awk '
-{
-  gsub(/\$\{SS_SERVER_PORT\}/, ENVIRON["SS_SERVER_PORT"]);
-  gsub(/\$\{SS_SERVER_PASSWORD\}/, ENVIRON["SS_SERVER_PASSWORD"]);
-  print;
+function escape_json_string(value, escaped) {
+  escaped = value
+  gsub(/\\/, "\\\\", escaped)
+  gsub(/"/, "\\\"", escaped)
+  return escaped
 }
-' "$template_path" > "$rendered_path"
+
+{
+  if (ENVIRON["SS_SERVER_PORT"] != "" && $0 ~ /^[[:space:]]*"server_port"[[:space:]]*:/) {
+    sub(/: .*/, ": " ENVIRON["SS_SERVER_PORT"] ",")
+  }
+
+  if (ENVIRON["SS_SERVER_PASSWORD"] != "" && $0 ~ /^[[:space:]]*"password"[[:space:]]*:/) {
+    password = escape_json_string(ENVIRON["SS_SERVER_PASSWORD"])
+    sub(/: .*/, ": \"" password "\",")
+  }
+
+  print
+}
+' "$source_path" > "$rendered_path"
 
 exec docker-entrypoint.sh ssserver --log-without-time -a nobody -c "$rendered_path"
