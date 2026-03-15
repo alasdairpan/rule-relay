@@ -90,7 +90,7 @@ impl DomainCheckResponse {
 pub struct MatchedRule {
     pub text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub filter_list_id: Option<u64>,
+    pub filter_list_id: Option<i64>,
 }
 
 /// Stable reason categories exposed by the public relay API.

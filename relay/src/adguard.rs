@@ -88,7 +88,7 @@ where
 pub struct AdguardMatchedRule {
     pub text: String,
     #[serde(default)]
-    pub filter_list_id: u64,
+    pub filter_list_id: i64,
 }
 
 /// Internal error type for AdGuard transport and decode failures.
