@@ -72,8 +72,15 @@ pub struct AdguardCheckHostResponse {
     pub service_name: String,
     #[serde(default)]
     pub cname: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_string_vec_or_null")]
     pub ip_addrs: Vec<String>,
+}
+
+fn deserialize_string_vec_or_null<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<Vec<String>>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 /// Individual matched rule entry returned by AdGuard Home when a rule fired.
