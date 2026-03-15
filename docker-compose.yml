@@ -7,11 +7,18 @@ services:
     # in the default topology.
     image: ghcr.io/shadowsocks/ssserver-rust:latest
     restart: unless-stopped
+    environment:
+      SS_SERVER_PORT: ${SS_SERVER_PORT:?SS_SERVER_PORT must be set}
+      SS_SERVER_PASSWORD: ${SS_SERVER_PASSWORD:?SS_SERVER_PASSWORD must be set}
     volumes:
-      - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.json:ro
+      - ./deploy/shadowsocks/config.json:/etc/shadowsocks-rust/config.template.json:ro
+      - ./deploy/shadowsocks/render-config.sh:/usr/local/bin/render-shadowsocks-config.sh:ro
     ports:
       - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/tcp"
       - "${SS_SERVER_PORT}:${SS_SERVER_PORT}/udp"
+    entrypoint:
+      - /bin/sh
+      - /usr/local/bin/render-shadowsocks-config.sh
     networks:
       - relay
 

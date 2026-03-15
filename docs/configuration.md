@@ -35,12 +35,14 @@ This file is mounted directly into the `ssserver-rust` container. Because it is 
 Field summary:
 
 - `server`: Container bind address. `0.0.0.0` allows the server process to listen on all container interfaces.
-- `server_port`: Port consumed from `SS_SERVER_PORT`.
-- `password`: Secret consumed from `SS_SERVER_PASSWORD`.
+- `server_port`: Port rendered from `SS_SERVER_PORT` before the container starts `ssserver`.
+- `password`: Secret rendered from `SS_SERVER_PASSWORD` before the container starts `ssserver`.
 - `timeout`: Idle timeout in seconds for inactive connections.
 - `method`: Cipher suite used by the Shadowsocks server.
 - `fast_open`: Enables TCP Fast Open when supported by the runtime and host.
 - `log.level`: Runtime log verbosity for the Shadowsocks server.
+
+The Compose service renders `deploy/shadowsocks/config.json` into a runtime config file from container environment variables immediately before launching `ssserver`.
 
 ## AdGuard Home State Directories
 
